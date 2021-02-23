@@ -1,0 +1,13 @@
+Setup:
+
+To setup the node server, change ./node-server/config/db-config.js to necessary values to connect to your database
+
+In ./node-server run "node db-setup.js" to populate the database with the initial values
+
+In ./node-server run "node server.js" to start the node server
+
+In ./react-client run "npm start" to start the react app
+
+The username and password to login are prefilled, you only need to hit login to authenticate
+
+The functionality for Purchase was not completed, the page is there to show what was done
