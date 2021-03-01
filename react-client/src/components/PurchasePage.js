@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import {connect} from "react-redux";
 import { Card, Form, Button, Table } from "react-bootstrap";
 import PurchaseModal from "./PurchaseModal";
+import {handleNewOrder} from "../actions/orders";
 
 
 class PurchasePage extends Component {
@@ -12,17 +13,36 @@ class PurchasePage extends Component {
             newCustomer: '',
             existingCustomer: '',
             selectedItems: {},
+            errors: {customer: false, items: false, quantity: {}},
             showPurchaseModal: false,
-            order: {}
+            orderDetails: {}
         }
 
         this.handleSelectCustomer = this.handleSelectCustomer.bind(this);
         this.handleSelectItem = this.handleSelectItem.bind(this);
         this.handleChangeNewCustomer = this.handleChangeNewCustomer.bind(this);
         this.handleChangeQuantity = this.handleChangeQuantity.bind(this);
+        this.clearForm = this.clearForm.bind(this);
         this.openPurchaseModal = this.openPurchaseModal.bind(this);
         this.closePurchaseModal = this.closePurchaseModal.bind(this);
+        this.buildOrder = this.buildOrder.bind(this);
         this.handlePurchase = this.handlePurchase.bind(this);
+
+        this.customers = {};
+        this.items = {};
+    }
+
+
+    //Quick fix instead of changing the rest of the project
+    componentDidMount() {
+        this.props.customers.forEach((customer) => {
+            this.customers[customer.CustomerId] = customer;
+        });
+
+        this.props.items.forEach((item) => {
+            this.items[item.ItemId] = item;
+        });
+
     }
 
     handleChangeNewCustomer(event){
@@ -34,7 +54,7 @@ class PurchasePage extends Component {
     }
 
     handleSelectItem(event){
-        let ItemId = event.target.id;
+        let ItemId = parseInt(event.target.id);
         let selected = this.state.selectedItems;
         if(selected.hasOwnProperty(event.target.id)){
             delete selected[ItemId];
@@ -55,40 +75,90 @@ class PurchasePage extends Component {
         }
     }
 
+    clearForm(){
+        this.setState({
+            newCustomer: '',
+            existingCustomer: '',
+            selectedItems: {},
+            errors: {customer: false, items: false, quantity: {}}
+        });
+    }
+
+    buildOrder(){
+        let order = {
+            Items: [],
+            Total: 0,
+            Date: new Date(),
+            customerId: null
+        };
+
+        if(this.state.existingCustomer!==''){
+            let customerId = this.state.existingCustomer;
+            order = {...order, customerName: this.customers[customerId].CustomerName, customerId: customerId};
+
+        } else {
+            order = {...order, customerName: this.state.newCustomer};
+        }
+
+        Object.keys(this.state.selectedItems).forEach((itemId) => {
+            let itemName = this.items[itemId].ItemName;
+            let quantity = this.state.selectedItems[itemId];
+            let price = this.items[itemId].Price;
+
+            order.Items.push({
+                ItemId: itemId,
+                ItemName: itemName,
+                Quantity: quantity,
+                Price: price
+            });
+
+            order.Total = order.Total + (price)*quantity;
+        });
+
+        return order;
+    }
+
+
     openPurchaseModal(){
-        // let selectedItems = this.state.selectedItems;
-        // if(!((this.state.existingCustomer=='' && this.state.newCustomer=='') && Object.keys(selectedItems).length==0)){
-        //     let total = selectedItems => Object.values(selectedItems).reduce((a, b) => a + b);
-        //     if (total > 0){
-        //         let order = {};
-        //         if(this.state.existingCustomer){
-        //
-        //         }
-        //
-        //         this.setState({showPurchaseModal: true});
-        //     }
-        // }
+        let errors = {customer: false, items: false, quantity: {}};
+        if (this.state.existingCustomer==='' && this.state.newCustomer===''){
+            errors.customer = true;
+        }
+        if (Object.keys(this.state.selectedItems).length===0){
+            errors.items = true;
+        } else {
+            Object.keys(this.state.selectedItems).forEach((itemId) => {
+                if(this.state.selectedItems[itemId]===0){
+                    errors.quantity[itemId] = true;
+                }
+            });
+        }
+
+        if(errors.customer || errors.items || Object.keys(errors.quantity).length>0){
+            this.setState({errors: errors});
+        } else{
+            let newOrder = this.buildOrder();
+            this.setState({errors: errors, showPurchaseModal: true, orderDetails: newOrder});
+        }
     }
 
     closePurchaseModal(){
-        this.setState({showPurchaseModal: false});
+        this.setState({showPurchaseModal: false, orderDetails: {}});
     }
 
-    handlePurchase(order){
-
+    handlePurchase(){
+        this.props.dispatch(handleNewOrder(this.state.orderDetails, this.props.authedUser.authToken));
     }
 
 
     render() {
         const { customers, items } = this.props;
 
-        // let modal = null;
-        // if(this.state.showPurchaseModal){
-        //     let customer = this.state.existingCustomer=='' ? this.state.newCustomer : this.state.existingCustomer;
-        //     modal = <PurchaseModal showModal={this.state.showPurchaseModal} handlePurchase={this.handlePurchase} customer={customer} items={this.state.selectedItems}/>
-        // }
+        let modal = null;
+        if(this.state.showPurchaseModal){
+            modal = <PurchaseModal showModal={this.state.showPurchaseModal} closeModal={this.closePurchaseModal} handlePurchase={this.handlePurchase} order={this.state.orderDetails}/>
+        }
 
-        console.log(this.state.selectedItems);
         return(
             <div style={{marginTop: 100}}>
                 <Card bg='light' border='info' style={{width: 700, margin: '0 auto', marginTop: 75}}>
@@ -132,20 +202,24 @@ class PurchasePage extends Component {
                         </Form>
                     </Card.Body>
 
-                    <Card.Footer style={{textAlign: 'center'}}>
-                        <Button disabled onClick={this.openPurchaseModal}>Submit</Button>
+                    <Card.Footer>
+                        <div className="float-right" >
+                            <Button variant="secondary" onClick={this.clearForm}>Clear</Button>
+                            <Button style={{marginLeft: 10}} onClick={this.openPurchaseModal}>Submit</Button>
+                        </div>
                     </Card.Footer>
                 </Card>
-
+                {modal}
             </div>
         );
     }
 }
 
-function mapStateToProps({ customers, items, orders }, props){
+function mapStateToProps({ customers, items, authedUser }, props){
     return {
         customers,
         items,
+        authedUser,
         ...props
     }
 }

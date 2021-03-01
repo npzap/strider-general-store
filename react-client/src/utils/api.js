@@ -148,16 +148,18 @@ export function getOrders(authToken){
     });
 }
 
-export function addOrder(id, date, total, authToken){
+export function createOrder(id, name, date, total, items, authToken){
     const data = {
         CustomerId: id,
+        CustomerName: name,
         Date: date,
-        Total: total
+        Total: total,
+        Items: items
     };
 
     return new Promise((resolve, reject) => {
         fetch('http://localhost:' + PORT + '/orders', {
-            method: 'GET',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + authToken

@@ -1,5 +1,6 @@
 const Order = require("../models/order.js");
 const OrdersItems = require("../models/ordersItems");
+const Customer = require("../models/customer");
 
 exports.create = (req, res) => {
     if(!req.body) {
@@ -8,14 +9,28 @@ exports.create = (req, res) => {
         });
     }
 
+    let customerId;
+    if(req.body.newCustomer){
+        Customer.create(req.body.CustomerName, (err, data) => {
+            if(err) {
+                reject(err);
+            }
+            resolve(data);
+        }).then((data) => {
+            customerId = data.id;
+        });
+
+    } else{
+        customerId = req.body.CustomerId;
+    }
+
     const order = new Order({
-        CustomerId: req.body.CustomerId,
+        CustomerId: customerId,
         Date: req.body.Date,
         Total: req.body.Total
     });
 
     const Items = req.body.Items;
-    let returnItems = [];
 
     return new Promise((resolve, reject) => {
         Order.create(order, (err, data) => {

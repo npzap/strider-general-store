@@ -35,9 +35,6 @@ export function handleInitialData(authToken) {
 
 export function handleClearData() {
     return (dispatch) => {
-        dispatch(showLoading());
-        dispatch(clearData).then(
-            dispatch(hideLoading())
-        );
+        dispatch(clearData());
     }
 }

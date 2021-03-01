@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from 'react';
 import { connect } from 'react-redux'
-import { BrowserRouter as Router, Route, Redirect, Switch, useHistory } from "react-router-dom";
+import { BrowserRouter as Router, Route, Redirect, Switch } from "react-router-dom";
 import LoadingBar from "react-redux-loading";
 import { handleLogin, handleLogout } from "../actions/authedUser";
 import HeaderNavbar from './HeaderNavbar.js';
@@ -8,8 +8,6 @@ import LoginModal from './LoginModal.js';
 import Homepage from "./Homepage";
 import PurchasePage from "./PurchasePage";
 import ReceiptPage from "./ReceiptPage";
-import ItemPage from "./ItemPage";
-
 
 
 class App extends Component {

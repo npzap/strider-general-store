@@ -11,3 +11,4 @@ In ./react-client run "npm start" to start the react app
 The username and password to login are prefilled, you only need to hit login to authenticate
 
 The functionality for Purchase was not completed, the page is there to show what was done
+Edit: Front end of Purchase Page is been completed but there is still a few bugs on the node server to create a new purchase
